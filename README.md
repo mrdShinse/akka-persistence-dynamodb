@@ -4,7 +4,7 @@ DynamoDBJournal for Akka Persistence
 A replicated [Akka Persistence](http://doc.akka.io/docs/akka/2.4.0/scala/persistence.html) journal backed by
 [Amazon DynamoDB](http://aws.amazon.com/dynamodb/).
 
-**Please note that this module does neither include a snapshot-store plugin nor an Akka Persistence Query plugin.**
+**このモジュールには、snapshot-storeプラグインもAkka Persistence Queryプラグインも含まれていないことに注意してください。**
 
 Scala: `2.11.x` or `2.12.1`  Akka: `2.4.14`  Java: `8+`
 
@@ -14,7 +14,7 @@ Scala: `2.11.x` or `2.12.1`  Akka: `2.4.14`  Java: `8+`
 Installation
 ------------
 
-This plugin is published to the Maven Central repository with the following names:
+このプラグインはMaven Centralリポジトリに以下の名前で公開されています:
 
 ~~~
 <dependency>
@@ -30,7 +30,7 @@ or for sbt users:
 libraryDependencies += "com.typesafe.akka" % "akka-persistence-dynamodb_2.11" % "1.0.0"
 ```
 
-Substitute the `_2.11` suffix by `_2.12` when using Scala version 2.12.1 or greater. This plugin requires Java 8 (just as Akka itself).
+Scalaバージョン2.12.1以降を使用する場合は、_2.12を_2.11サフィックスに置き換えてください。このプラグインにはJava 8が必要です（Akka自体と同様）。
 
 Configuration
 -------------
@@ -48,17 +48,17 @@ my-dynamodb-journal {                     # and add some overrides
 }
 ~~~
 
-For details on the endpoint URL please refer to the [DynamoDB documentation](http://docs.aws.amazon.com/general/latest/gr/rande.html#ddb_region). There are many more settings that can be used for fine-tuning and adapting this journal plugin to your use-case, please refer to the [reference.conf](https://github.com/akka/akka-persistence-dynamodb/blob/master/src/main/resources/reference.conf) file.
+エンドポイントURLの詳細については、[DynamoDBのマニュアル](http://docs.aws.amazon.com/general/latest/gr/rande.html#ddb_region)を参照してください。このジャーナルプラグインをあなたのユースケースに微調整したり適応させたりするために使用できるその他の設定は、[reference.conf](https://github.com/akka/akka-persistence-dynamodb/blob/master/src/main/resources/reference.conf)ファイルを参照してください。
 
-Before you can use these settings you will have to create a table, e.g. using the AWS console, with the following schema:
+これらの設定を使用するには、まずテーブルを作成する必要があります。次のスキーマを使用して、AWSコンソールを使用します。
 
-  * a hash key of type String with name `par`
-  * a sort key of type Number with name `num`
+  * 名前が`par`のString型のハッシュキー
+  * 名前が`num`の型Numberのソートキー
 
 Storage Semantics
 -----------------
 
-DynamoDB only offers consistency guarantees for a single storage item—which corresponds to one event in the case of this Akka Persistence plugin. This means that any single event is either written to the journal (and thereby visible to later replays) or it is not. This plugin supports atomic multi-event batches nevertheless, by marking the contained events such that partial replay can be avoided (see the `idx` and `cnt` attributes in the storage format description below). Consider the following actions of a PersistentActor:
+DynamoDBは、このAkka Persistenceプラグインの場合の1つのイベントに対応する、単一のストレージ項目に対する整合性保証のみを提供します。 これは、任意の単一のイベントがジャーナルに書き込まれる（したがって、後のリプレイに表示される）か、そうでないことを意味します。 それにもかかわらず、このプラグインは部分的な再生を避けることができるように、含まれているイベントをマークすることにより、アトミックなマルチイベントバッチをサポートします（下記のストレージフォーマットの説明の`idx`と`cnt`の属性を参照）。 PersistentActorの次の動作を考えてみましょう。
 
 ```scala
 val events = List(<some events>)
@@ -69,25 +69,25 @@ else {
 }
 ```
 
-In the first case a recovery will only ever see all of the events or none of them. This is also true if recovery is requested with an upper limit on the sequence number to be recovered to or a limit on the number of events to be replayed; the event count limit is applied before removing incomplete batch writes which means that the actual count of events received at the actor may be lower than the requested limit even if further events are available.
+最初のケースでは、リカバリではすべてのイベントのみが表示されるか、まったく表示されません。 これは、リカバリするシーケンス番号の上限またはリプレイするイベントの数の上限を指定してリカバリが要求された場合も同様です。 不完全なバッチ書き込みを削除する前にイベント数の制限が適用されます。これは、アクターで受け取ったイベントの実際の数が、さらにイベントが使用可能であっても要求された制限よりも低くなる可能性があることを意味します。
 
-In the second case each event is treated in isolation and may or may not be replayed depending on whether it was persisted successfully or not.
+後者の場合、各イベントは単独で処理され、正常に永続化されたかどうかによって再生される場合とされない場合があります。
 
 Performance Considerations
 --------------------------
 
-This plugin uses the AWS Java SDK which means that the number of requests that can be made concurrently is limited by the number of connections to DynamoDB and by the number of threads in the thread-pool that is used by the AWS HTTP client. The default setting is 50 connections which for a deployment that is used from the same EC2 region allows roughly 5000 requests per second (where every persisted event batch is roughly one request). If a single ActorSystem needs to persist more than this number of events per second then you may want to tune the parameter
+このプラグインはAWS Java SDKを使用します。つまり、同時に実行できるリクエスト数は、DynamoDBへの接続数と、AWS HTTPクライアントで使用されるスレッドプール内のスレッド数によって制限されます。 既定の設定は50の接続です。同じEC2領域から使用される展開では、1秒あたり約5000件の要求が許可されます（永続化されたイベントバッチはすべて約1回の要求です）。 1つのActorSystemがこの1秒あたりのイベント数を超えて保持する必要がある場合は、パラメータを調整することができます
 
 ~~~
 my-dynamodb-journal.aws-client-config.max-connections = <your value here>
 ~~~
 
-Changing this number changes both the number of concurrent connections and the used thread-pool size.
+この数を変更すると、同時接続数と使用されるスレッドプールサイズの両方が変更されます。
 
 Compatibility with pre-1.0 versions
 -----------------------------------
 
-The storage layout has been changed incompatibly for performance and correctness reasons, therefore events stored with the old plugin cannot be used with versions since 1.0.
+パフォーマンスと正確性の理由からストレージレイアウトが互換性がないため、古いプラグインで保存されたイベントは1.0以降のバージョンでは使用できません。
 
 Plugin Development
 ------------------
@@ -102,11 +102,11 @@ Please also read the [CONTRIBUTING.md](CONTRIBUTING.md) file.
 
 ### DynamoDB table structure discussion
 
-The structure for journal storage in dynamodb has evolved over iterations of performance tuning. Most of these lessons were learned in creating the eventsourced dynamodb journal, but apply here as well.
+dynamodbでのジャーナル・ストレージの構造は、パフォーマンス・チューニングの反復で進化しました。 これらのレッスンのほとんどは、イベントソースのdynamodbジャーナルの作成で学んだが、ここでも同様に適用する。
 
 ##### Naïve structure
 
-When initially modelling journal storage in dynamo, it seems natural to use a simple structure similar to this
+ダイナモで最初にジャーナルストレージをモデル化するとき、このような単純な構造を使用するのは当然のようです
 
 ```
 persistenceId : S : HashKey
@@ -114,7 +114,7 @@ sequenceNr    : N : RangeKey
 payload       : B
 ```
 
-This maps very well to the operations a journal needs to solve.
+これはジャーナルが解決する必要のある操作に非常によく似ています。
 
 ```
 writeMessage      -> PutItem
@@ -123,11 +123,11 @@ replayMessages    -> Query by persistenceId, conditions and ordered by sequenceN
 highCounter       -> Query by persistenceId, conditions and ordered by sequenceNr, descending limit 1
 ```
 
-However this layout suffers from scalability problems. Since the hash key is used to locate the data storage node, all writes for a single processor will go to the same DynamoDB node, which limits throughput and invites throttling, no matter the level of throughput provisioned for a table—the hash key just gets too hot. Also this limits replay throughput since you have to step through a sequence of queries, where you use the last processed item in query N for query N+1.
+しかしながら、このレイアウトはスケーラビリティの問題を抱えている。 ハッシュキーを使用してデータストレージノードを特定するため、単一プロセッサのすべての書き込みが同じDynamoDBノードに送られ、テーブルにプロビジョニングされたスループットのレベルに関係なく、スループットが制限され、スロットルが招待されます 熱すぎる。 また、これは、クエリN + 1に対してクエリNで最後に処理されたアイテムを使用する一連のクエリをステップ実行する必要があるため、再生スループットを制限します。
 
 ##### Higher throughput structure
 
-With the following abbreviations:
+以下の略語を使用します。
 
 ~~~
 P -> PersistentRepr
@@ -135,7 +135,7 @@ SH -> SequenceHigh
 SL -> SequenceLow
 ~~~
 
-we model PersistentRepr storage as
+PersistentReprストレージを次のようにモデル化します。
 
 ~~~
 par = <journalName>-P-<persistenceId>-<sequenceNr / 100> : S : HashKey
@@ -145,7 +145,7 @@ idx = <atomic write batch index>                         : N (possibly absent)
 cnt = <atomic write batch max index>                     : N (possibly absent)
 ~~~
 
-High Sequence Numbers
+高いシーケンス番号
 
 ~~~
 par = <journalName>-SH-<persistenceId>-<(sequenceNr / 100) % sequenceShards> : S : HashKey
@@ -153,7 +153,7 @@ num = 0                                                                      : N
 seq = <sequenceNr rounded down to nearest multiple of 100>                   : N
 ~~~
 
-Low Sequence Numbers
+低シーケンス番号
 
 ~~~
 par = <journalName>-SL-<persistenceId>-<(sequenceNr / 100) % sequenceShards> : S : HashKey
@@ -161,9 +161,9 @@ num = 0                                                                      : N
 seq = <sequenceNr, not rounded>                                              : N
 ~~~
 
-This is somewhat more difficult to code, but offers higher throughput possibilities. Notice that the items that hold the high and low sequence are sharded, rather than using a single item to store the counter. If we only used a single item, we would suffer from the same hot key problems as our first structure.
+これはコード化するのがやや困難ですが、より高いスループットの可能性を提供します。 1つのアイテムを使用してカウンタを格納するのではなく、上位シーケンスと下位シーケンスを保持するアイテムが断片化されることに注意してください。 単一のアイテムしか使用しなかった場合、最初の構造と同じホットキーの問題が発生します。
 
-When writing an item we typically do not touch the high sequence number storage, only when writing an item with sort key `0` is this done. This implies that reading the highest sequence number will need to first query the sequence shards for the highest multiple of 100 and then send a `Query` for the corresponding P entry’s hash key to find the highest stored sort key number.
+アイテムを書き込むときには通常、シーケンス番号の高い記憶域に触れません。ソートキー`0`のアイテムを書き込むときのみ、これが行われます。 これは、最も高いシーケンス番号を読み取るには、最初に100の最高倍数のシーケンス断片を照会し、対応するPエントリのハッシュキーの`Query`を送信して、格納されている最高のソートキー番号を見つける必要があることを意味します。
 
 Credits
 -------
